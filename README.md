@@ -1,1 +1,119 @@
-# walmart_sales_prediction
+#Pipeline Introduction
+
+In this project,we built three time series models to predict 2 month ahead sales for different departments across different stores for walmart. In evalution of the model performance, we choose WMAE which gives more weight to the holiday season department sales compare to normal seasons. In total we have 30 WMAE(10 for each folds,10 folds in total with 3 models it's 30 WMAE).
+
+For model trainning:first we get the sale data for specific department in a specific walmart sale, this part data is time series data for single store. Then we build seasonal naive model and other models based on each time series data and make prediction for corresponding test department for 2 month period. Lastly we loop over each department and get prediction for each test department.
+
+Details of coding explanation is divided as three parts: 
+
+- Preprocessing
+
+- Models
+
+- Postprocessing
+
+
+
+
+# Preprocessing 
+
+All the preprocessing steps is built within `mypredict` function and being called on by **evaluationCode.R** and being looped over. Within `mypredict`, we first choose start_date and end_date for the designated period of training period,then we extract the corresponding 2 month ahead fold test data. From there, within `for (dept in test_depts) ... loop`, we extract store-level sales data from the `train_frame`, and call our model function and make predictions.
+
+# Models 
+
+In this project,we built 3 models in total:
+
+- Naive model
+- Time Series Trend model
+- Hybrid model(tslm_basic for fold 1-7,stlf.svd for fold 8-10)
+
+
+### Naive Model
+Naive model is being directly copied from instructor joshua's code. In his docs, naive model is the last corresponding observation from train set,so the test prediction equals excatlys as the previous train data point.
+
+### TSLM (Only on trend)
+for the second column of `error.csv`, the method being used here is TSLM model,but we only built model on trend,no seasonal pattern were included here.
+
+### Hybrid model(tslm model for fold 1-7,stlf.svd for fold 8-10)
+TSLM and STLF both are seasonal,trend linear regression model.But before linear model buildining, I conducted `SVD` (Single Value Decomposition) for train test to get a smoother train data and built model upon the transformed train set.
+
+Between fold 1-7, we use TSLM, however after fold 7, we transformed our model to a stlf model, that's because the model learning of stlf requires at least 2 season, and therefore we can only start at fold 8.
+
+
+# Postprocessing
+
+For the step of postprocess, it's more like undo preprocessing. In this part, 
+`update_test()` is a function to update the test result to the test_frame, then `evaluationCode.R` will loop over all the saved test result and output the error for the ten folds.
+
+# Appendix
+- Running Time: 2444.079
+- System: 3.3 GHz,16 GB MacBook Pro
+```{r, echo=FALSE}
+model_name=c("Fold","Model 1 ","Model 2 ","model 3")
+folds = c(seq(1,10,1),"Averege")
+model1_result = c(2078.725869
+,2589.337618,
+2253.936119,
+2823.098257,
+5156.011532,
+4218.347745,
+2269.904244,
+2143.839029,
+2221.144749,
+2372.4248,mean(c(2078.725869
+,2589.337618,
+2253.936119,
+2823.098257,
+5156.011532,
+4218.347745,
+2269.904244,
+2143.839029,
+2221.144749,
+2372.4248)))
+model2_result = c(3092.643386,
+3143.451429,
+2578.291212,
+2194.316846,
+5514.856891,
+2931.627921,
+2639.592677,
+2794.890307,
+2462.21593,
+2128.113655,mean(c(3092.643386,
+3143.451429,
+2578.291212,
+2194.316846,
+5514.856891,
+2931.627921,
+2639.592677,
+2794.890307,
+2462.21593,
+2128.113655)))
+model3_result = c(1967.499478,
+1377.465706,
+1385.451096,
+1549.900343,
+2310.403133,
+1639.897741,
+1686.31398,
+1534.99093,
+1381.363432,
+1344.237546,mean(c(1967.499478,
+1377.465706,
+1385.451096,
+1549.900343,
+2310.403133,
+1639.897741,
+1686.31398,
+1534.99093,
+1381.363432,
+1344.237546)))
+
+
+results1 = data.frame(folds,model1_result,model2_result,model3_result)
+colnames(results1) = c("Fold","Model 1 ","Model 2 ","model 3")
+
+# create results table
+kable_styling(kable(results1, format = "html", digits = 5), full_width = FALSE)
+```
+
